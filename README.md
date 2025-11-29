@@ -407,14 +407,55 @@ uv run src/demo.py --config <配置文件的绝对路径>.yaml
 
 
 ### Docker运行
-容器化运行：容器依赖nvidia的容器环境，在准备好支持GPU的docker环境后，运行以下命令即可完成镜像的构建与启动：
-> [!Note]
-> 原有的运行方式：
+容器化运行：容器依赖nvidia的容器环境，在准备好支持GPU的docker环境后，按照以下步骤完成镜像的构建与启动。
+
+#### 步骤1：选择配置文件
+
+查看可用的配置文件：
+
 ```bash
-./build_and_run.sh --config <配置文件的相对路径>.yaml
+ls config/
 ```
+
+您将看到以下配置文件：
+
+* `chat_with_minicpm.yaml` - 完全本地运行，适合测试
+* `chat_with_openai_compatible.yaml` - 使用云端API
+* `chat_with_openai_compatible_bailian_cosyvoice.yaml` - 云端服务为主
+
+#### 步骤2：构建并运行
+
+##### 选项A：使用提供的脚本（最简单）
+
+```bash
+# 使脚本可执行
+chmod +x build_and_run.sh
+
+# 构建并运行（将配置文件替换为您选择的配置）
+./build_and_run.sh --config config/chat_with_minicpm.yaml
+```
+
+##### 选项B：手动Docker命令
+
+```bash
+# 构建Docker镜像
+docker build -t openavatarchat:latest --build-arg CONFIG_FILE=config/chat_with_minicpm.yaml .
+
+# 运行容器
+docker run -d \
+  --name openavatarchat \
+  --gpus all \
+  -p 8282:8282 \
+  -v $(pwd)/build:/root/open-avatar-chat/build \
+  -v $(pwd)/models:/root/open-avatar-chat/models \
+  -v $(pwd)/ssl_certs:/root/open-avatar-chat/ssl_certs \
+  -v $(pwd)/config:/root/open-avatar-chat/config \
+  openavatarchat:latest \
+  --config config/chat_with_minicpm.yaml
+```
+
 > [!Note]
-针对50系列显卡，我们已将项目`pyproject.toml`中的CUDA版本升级至12.8，并完成了对MuseTalk的适配。通过Docker环境（Ubuntu 24.04，驱动版本：575.64.03）测试验证，Lam、LiteAvatar、MuseTalk均能正常运行。
+> 针对50系列显卡，我们已将项目`pyproject.toml`中的CUDA版本升级至12.8，并完成了对MuseTalk的适配。通过Docker环境（Ubuntu 24.04，驱动版本：575.64.03）测试验证，Lam、LiteAvatar、MuseTalk均能正常运行。
 如需自行构建镜像，可使用`build_cuda128.sh`脚本（基于`Dockerfile.cuda128`）进行构建，运行则使用`run_docker_cuda128.sh`脚本。与旧版本不同，`Dockerfile.cuda128`将项目所需的所有依赖环境统一打包到镜像中，无需再通过配置文件动态加载，便于测试所有数字人模型。
 
 ```bash

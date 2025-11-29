@@ -386,10 +386,51 @@ uv run src/demo.py --config <absolute path to config file>.yaml
 ```
 
 ### Docker Execution
-> [!Note] 
-Containerized execution: The container relies on NVIDIA's container environment. After preparing a Docker environment that supports GPUs, execute the following command to complete the construction and deployment of the image:
+Containerized execution: The container relies on NVIDIA's container environment. After preparing a Docker environment that supports GPUs, follow these steps to complete the construction and deployment of the image.
+
+#### Step 1: Choose a Configuration
+
+List available configurations:
+
 ```bash
-./build_and_run.sh --config <relative path to config file>.yaml
+ls config/
+```
+
+You'll see files like:
+
+* `chat_with_minicpm.yaml` - fully local, good for testing
+* `chat_with_openai_compatible.yaml` - uses cloud APIs
+* `chat_with_openai_compatible_bailian_cosyvoice.yaml` - cloud-heavy
+
+#### Step 2: Build and Run with Docker
+
+##### Option A: Use the provided script (easiest)
+
+```bash
+# Make the script executable
+chmod +x build_and_run.sh
+
+# Build and run (replace with your chosen config)
+./build_and_run.sh --config config/chat_with_minicpm.yaml
+```
+
+##### Option B: Manual Docker commands
+
+```bash
+# Build the Docker image
+docker build -t openavatarchat:latest --build-arg CONFIG_FILE=config/chat_with_minicpm.yaml .
+
+# Run the container
+docker run -d \
+  --name openavatarchat \
+  --gpus all \
+  -p 8282:8282 \
+  -v $(pwd)/build:/root/open-avatar-chat/build \
+  -v $(pwd)/models:/root/open-avatar-chat/models \
+  -v $(pwd)/ssl_certs:/root/open-avatar-chat/ssl_certs \
+  -v $(pwd)/config:/root/open-avatar-chat/config \
+  openavatarchat:latest \
+  --config config/chat_with_minicpm.yaml
 ```
 
 > [!Note]  
